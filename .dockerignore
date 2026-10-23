@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.env
+.env.*
+ADMIN-LOGIN.txt
+dev.log
+prisma/dev.db*
+README.md

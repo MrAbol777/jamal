@@ -1,0 +1,7 @@
+.env
+.env.*
+ADMIN-LOGIN.txt
+node_modules
+.next
+dev.log
+prisma/dev.db*

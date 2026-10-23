@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // آدرس pooler سوپابیس (برای برنامه)
+  directUrl = env("DIRECT_URL") // آدرس مستقیم (برای مایگریشن)
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  username     String @unique
+  passwordHash String
+}
+
+// تنظیمات شرکت (فقط یک ردیف با id=1)
+model Setting {
+  id          Int     @id
+  companyName String
+  address     String
+  phone       String
+  footerNote  String
+  logo        String? // data URL
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  name       String
+  price      Float    @default(0) // ریال، قیمت پیش‌فرض هر کیلو
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  cheles     Chele[]
+  items      InvoiceItem[]
+}
+
+model Chele {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  name      String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id       Int       @id @default(autoincrement())
+  name     String
+  phone    String    @default("")
+  address  String    @default("")
+  invoices Invoice[]
+}
+
+model InvoiceCounter {
+  year Int @id
+  last Int
+}
+
+model Invoice {
+  id             Int           @id @default(autoincrement())
+  year           Int // سال شمسی
+  number         Int
+  date           DateTime
+  havaleNo       String        @default("")
+  customerId     Int
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  paymentType    String        @default("نقدی")
+  expenseTitle   String        @default("هزینه")
+  expenseAmount  Float         @default(0)
+  note           String        @default("")
+  createdAt      DateTime      @default(now())
+  items          InvoiceItem[]
+
+  @@unique([year, number])
+}
+
+model InvoiceItem {
+  id          Int      @id @default(autoincrement())
+  invoiceId   Int
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName String
+  cheleName   String   @default("")
+  weight      Float
+  fee         Float
+}

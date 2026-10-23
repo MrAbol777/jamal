@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: jamal-yarn-sales
+    runtime: docker
+    plan: free
+    healthCheckPath: /login
+    envVars:
+      # این سه مقدار را در داشبورد Render وارد کنید (در گیت نگه داشته نمی‌شوند)
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: COOKIE_SECURE
+        value: "1"
