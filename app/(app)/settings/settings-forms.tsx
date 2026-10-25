@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { changePassword, saveSettings, type ActionResult } from "@/app/actions";
 import { IconBuilding, IconCheck, IconLock, IconSpinner, IconUpload } from "@/components/icons";
 
-type S = { companyName: string; address: string; phone: string; footerNote: string; logo: string | null };
+type S = { companyName: string; subtitle: string; address: string; phone: string; mobile: string; managerName: string; footerNote: string; logo: string | null };
 
 export function SettingsForms({ s }: { s: S }) {
   const [a, saveAction, p1] = useActionState<ActionResult, FormData>(saveSettings, {});
@@ -19,11 +19,16 @@ export function SettingsForms({ s }: { s: S }) {
             <IconBuilding size={20} />
             اطلاعات بالای فاکتور
           </h2>
-          <p className="help !mt-1">این اطلاعات روی همه فاکتورها (پیش‌نمایش و PDF) چاپ می‌شود.</p>
+          <p className="help !mt-1">این اطلاعات بالای همه صورتحساب‌ها (پیش‌نمایش و PDF) چاپ می‌شود.</p>
         </div>
         <div>
           <label className="label" htmlFor="s-name">نام شرکت</label>
           <input id="s-name" name="companyName" className="input" defaultValue={s.companyName} required />
+        </div>
+        <div>
+          <label className="label" htmlFor="s-sub">خط زیر نام شرکت (اختیاری)</label>
+          <input id="s-sub" name="subtitle" className="input" defaultValue={s.subtitle} />
+          <p className="help">مثلاً انواع محصولات؛ زیر نام شرکت و با فونت کوچک‌تر چاپ می‌شود.</p>
         </div>
         <div>
           <label className="label" htmlFor="s-addr">آدرس</label>
@@ -32,12 +37,20 @@ export function SettingsForms({ s }: { s: S }) {
         <div>
           <label className="label" htmlFor="s-phone">تلفن</label>
           <input id="s-phone" name="phone" className="input num" inputMode="tel" defaultValue={s.phone} />
-          <p className="help">در سربرگ فاکتور، کنار نام و آدرس شرکت چاپ می‌شود.</p>
+          <p className="help">در سربرگ، کنار آدرس شرکت چاپ می‌شود.</p>
         </div>
         <div>
-          <label className="label" htmlFor="s-footer">متن پایین فاکتور (اختیاری)</label>
+          <label className="label" htmlFor="s-mobile">شماره موبایل</label>
+          <input id="s-mobile" name="mobile" className="input num" inputMode="tel" defaultValue={s.mobile} />
+        </div>
+        <div>
+          <label className="label" htmlFor="s-manager">نام مدیر (زیر «امضا مدیریت»)</label>
+          <input id="s-manager" name="managerName" className="input" defaultValue={s.managerName} />
+        </div>
+        <div>
+          <label className="label" htmlFor="s-footer">متن پایین صورتحساب (اختیاری)</label>
           <textarea id="s-footer" name="footerNote" rows={2} className="input !py-3 resize-y" defaultValue={s.footerNote} />
-          <p className="help">یک جمله ثابت که پایین همه فاکتورها چاپ می‌شود؛ مثلاً شماره حساب بانکی، شرایط فروش یا تشکر از خرید.</p>
+          <p className="help">یک جمله ثابت که پایین همه صورتحساب‌ها چاپ می‌شود؛ مثلاً شماره حساب بانکی، شرایط فروش یا تشکر از خرید.</p>
         </div>
         <div>
           <label className="label" htmlFor="s-logo">لوگو</label>

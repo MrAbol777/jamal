@@ -9,7 +9,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <PageHeader title="تنظیمات" />
-      <SettingsForms s={{ companyName: s.companyName, address: s.address, phone: s.phone, footerNote: s.footerNote, logo: s.logo }} />
+      <SettingsForms s={{ companyName: s.companyName, subtitle: s.subtitle, address: s.address, phone: s.phone, mobile: s.mobile, managerName: s.managerName, footerNote: s.footerNote, logo: s.logo }} />
     </div>
   );
 }

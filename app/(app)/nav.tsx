@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { IconInvoice, IconSettings, IconUsers, IconYarn } from "@/components/icons";
 
 const LINKS = [
-  { href: "/", label: "فاکتورها", Icon: IconInvoice },
+  { href: "/", label: "صورتحساب‌ها", Icon: IconInvoice },
   { href: "/products", label: "محصولات", Icon: IconYarn },
   { href: "/customers", label: "مشتری‌ها", Icon: IconUsers },
   { href: "/settings", label: "تنظیمات", Icon: IconSettings },

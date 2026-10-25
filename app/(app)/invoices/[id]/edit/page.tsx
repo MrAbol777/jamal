@@ -1,37 +1,27 @@
 import { notFound } from "next/navigation";
-import { getInvoice } from "@/lib/invoice";
-import { toJ, todayJ } from "@/lib/jalali";
+import { db } from "@/lib/db";
+import { dateToJ, todayJ } from "@/lib/jalali";
 import { fmtInvoiceNo } from "@/lib/format";
 import { PageHeader } from "@/components/page-header";
-import { InvoiceForm } from "../../invoice-form";
-import { loadFormData } from "../../load";
+import { HeaderForm } from "./header-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditInvoice({ params }: { params: Promise<{ id: string }> }) {
-  const inv = await getInvoice(Number((await params).id));
+export default async function EditStatementHeader({ params }: { params: Promise<{ id: string }> }) {
+  const id = Number((await params).id);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+  const inv = await db.invoice.findUnique({
+    where: { id },
+    select: { id: true, year: true, number: true, date: true, expenseTitle: true, expenseAmount: true, customer: { select: { name: true } } },
+  });
   if (!inv) notFound();
-  const data = await loadFormData();
-  // اگر مشتری فاکتور بعداً غیرفعال شده باشد باز هم در لیست باشد
-  const d = inv.date;
-  const date = toJ(new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
-      <PageHeader title="ویرایش فاکتور" sub={`شماره ${fmtInvoiceNo(inv.year, inv.number)}`} back={`/invoices/${inv.id}`} />
-      <InvoiceForm
-        {...data}
-        today={todayJ()}
-        initial={{
-          id: inv.id,
-          date,
-          havaleNo: inv.havaleNo,
-          customerId: inv.customerId,
-          paymentType: inv.paymentType,
-          expenseTitle: inv.expenseTitle,
-          expenseAmount: inv.expenseAmount,
-          note: inv.note,
-          items: inv.items.map((i) => ({ productId: i.productId, productName: i.productName, cheleName: i.cheleName, weight: i.weight, fee: i.fee })),
-        }}
+    <div className="space-y-4 max-w-xl mx-auto">
+      <PageHeader title="ویرایش صورتحساب" sub={`${inv.customer.name} · ${fmtInvoiceNo(inv.year, inv.number)}`} back={`/invoices/${id}`} />
+      <HeaderForm
+        id={id}
+        baseYear={todayJ().y}
+        initial={{ date: dateToJ(inv.date), expenseTitle: inv.expenseTitle, expenseAmount: inv.expenseAmount }}
       />
     </div>
   );

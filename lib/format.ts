@@ -39,3 +39,14 @@ export const lineTotal = (weight: number, fee: number) => Math.round(weight * fe
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
+
+/** جداکننده هزارگان با ارقام لاتین (برای ورودی‌ها) */
+export const groupDigits = (s: string) => s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+/** فقط ارقام (ورودی عدد صحیح) */
+export const cleanInt = (s: string) => toEnDigits(s).replace(/\D/g, "");
+/** ارقام و یک ممیز (ورودی اعشاری) */
+export const cleanDec = (s: string) => {
+  const t = toEnDigits(s).replace(/[^\d.]/g, "");
+  const [a, ...b] = t.split(".");
+  return b.length ? `${a}.${b.join("")}` : a;
+};

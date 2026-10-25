@@ -1,26 +1,32 @@
-import Link from "next/link";
-import { todayJ } from "@/lib/jalali";
+import { db } from "@/lib/db";
+import { fmtInvoiceNo } from "@/lib/format";
+import { fmtJ, todayJ } from "@/lib/jalali";
 import { PageHeader } from "@/components/page-header";
-import { InvoiceForm } from "../invoice-form";
-import { loadFormData } from "../load";
+import { NewStatementForm, type CustomerOpt } from "./new-statement-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewInvoice() {
-  const data = await loadFormData();
+export default async function NewStatement({ searchParams }: { searchParams: Promise<{ customer?: string }> }) {
+  const pre = Number((await searchParams).customer) || 0;
+  const rows = await db.customer.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      invoices: { select: { id: true, year: true, number: true, date: true }, orderBy: [{ date: "desc" }, { id: "desc" }] },
+    },
+  });
+  const customers: CustomerOpt[] = rows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    statements: c.invoices.map((i) => ({ id: i.id, no: fmtInvoiceNo(i.year, i.number), date: fmtJ(i.date) })),
+  }));
+  const today = todayJ();
+
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
-      <PageHeader title="فاکتور جدید" back="/" />
-      {data.products.length === 0 && (
-        <div className="alert bg-amber-50 text-amber-900 border border-amber-200">
-          <span>
-            ابتدا از بخش{" "}
-            <Link href="/products/new" className="font-bold underline underline-offset-4">محصولات</Link>{" "}
-            حداقل یک محصول ثبت کنید.
-          </span>
-        </div>
-      )}
-      <InvoiceForm {...data} today={todayJ()} />
+    <div className="space-y-4 max-w-xl mx-auto">
+      <PageHeader title="صورتحساب جدید" sub="برای هر مشتری یک صورتحساب؛ فروش‌ها بعداً ردیف‌به‌ردیف اضافه می‌شوند" back="/" />
+      <NewStatementForm customers={customers} today={today} initialCustomerId={customers.some((c) => c.id === pre) ? pre : 0} />
     </div>
   );
 }

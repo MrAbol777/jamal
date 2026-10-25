@@ -19,29 +19,24 @@ async function main() {
     update: {},
     create: {
       id: 1,
-      companyName: "شرکت ریسندگی نخ",
-      address: "آدرس شرکت را از بخش تنظیمات وارد کنید",
-      phone: "۰۲۱-۰۰۰۰۰۰۰۰",
+      companyName: "صنایع چله پیچی جمال",
+      subtitle: "انواع چله های مبلی _ پرده ای _ روفرشی _ پیراهنی _شال _ روسری _ ترمه",
+      address: "یزد بلوار استقلال خیابان سلک باف کوچه برلیان",
+      phone: "03535264456",
+      mobile: "09133561226",
+      managerName: "جمال دوست گل",
       footerNote: "",
     },
   });
 
   if ((await db.product.count()) === 0 && process.env.SEED_DEMO !== "0") {
-    await db.product.create({
-      data: {
-        name: "نخ پنبه‌ای (نمونه)",
-        price: 1_850_000,
-        cheles: { create: [{ name: "چله ۳۰/۱" }, { name: "چله ۲۰/۱" }] },
-      },
+    await db.product.createMany({
+      data: [
+        { name: "نخ پنبه‌ای (نمونه)", price: 1_850_000 },
+        { name: "نخ پلی‌استر (نمونه)", price: 1_420_000 },
+      ],
     });
-    await db.product.create({
-      data: {
-        name: "نخ پلی‌استر (نمونه)",
-        price: 1_420_000,
-        cheles: { create: [{ name: "چله ۴۰/۱" }] },
-      },
-    });
-    await db.customer.create({ data: { name: "مشتری نمونه", phone: "09120000000" } });
+    await db.customer.create({ data: { name: "آقای نمونه", phone: "09120000000" } });
   }
 }
 

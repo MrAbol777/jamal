@@ -20,8 +20,11 @@ model User {
 model Setting {
   id          Int     @id
   companyName String
+  subtitle    String  @default("") // خط زیر نام شرکت (مثلاً انواع محصولات)
   address     String
   phone       String
+  mobile      String  @default("")
+  managerName String  @default("") // اسم زیر «امضا مدیریت»
   footerNote  String
   logo        String? // data URL
 }
@@ -32,15 +35,7 @@ model Product {
   price      Float    @default(0) // ریال، قیمت پیش‌فرض هر کیلو
   active     Boolean  @default(true)
   createdAt  DateTime @default(now())
-  cheles     Chele[]
   items      InvoiceItem[]
-}
-
-model Chele {
-  id        Int     @id @default(autoincrement())
-  productId Int
-  name      String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
@@ -61,13 +56,10 @@ model Invoice {
   year           Int // سال شمسی
   number         Int
   date           DateTime
-  havaleNo       String        @default("")
   customerId     Int
   customer       Customer      @relation(fields: [customerId], references: [id])
-  paymentType    String        @default("نقدی")
   expenseTitle   String        @default("هزینه")
   expenseAmount  Float         @default(0)
-  note           String        @default("")
   createdAt      DateTime      @default(now())
   items          InvoiceItem[]
 
@@ -80,8 +72,10 @@ model InvoiceItem {
   invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   productId   Int?
   product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  productName String
-  cheleName   String   @default("")
-  weight      Float
-  fee         Float
+  date        DateTime // تاریخ فروش همین ردیف
+  havaleNo    String   @default("") // شماره حواله (دستی)
+  productName String   // متن چاپ‌شده زیر «نوع چله»؛ می‌تواند متن دلخواه باشد
+  weight      Float?
+  fee         Float?
+  amount      Float    @default(0) // مبلغ کل ردیف (وزن×فی یا دستی)
 }

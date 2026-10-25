@@ -42,3 +42,6 @@ next-env.d.ts
 
 ADMIN-LOGIN.txt
 dev.log
+
+# Local Netlify folder
+.netlify

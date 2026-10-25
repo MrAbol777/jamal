@@ -12,11 +12,11 @@ export function DeleteInvoiceButton({ id }: { id: number }) {
     <button
       type="button"
       className="icon-btn icon-btn-danger"
-      aria-label="حذف فاکتور"
-      title="حذف فاکتور"
+      aria-label="حذف صورتحساب"
+      title="حذف صورتحساب"
       disabled={pending}
       onClick={() => {
-        if (!confirm("این فاکتور برای همیشه حذف شود؟")) return;
+        if (!confirm("این صورتحساب با همه ردیف‌هایش برای همیشه حذف شود؟")) return;
         start(async () => {
           await deleteInvoice(id);
           router.replace("/");

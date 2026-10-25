@@ -40,3 +40,8 @@ export function jYearOf(date: Date): number {
 }
 
 export { format };
+
+/** تاریخ ذخیره‌شده (ظهر UTC) → تاریخ شمسی */
+export function dateToJ(date: Date): J {
+  return toJ(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}

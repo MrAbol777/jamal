@@ -3,98 +3,84 @@ import { db } from "./db";
 import { lineTotal } from "./format";
 import { fromJ, jYearOf, type J } from "./jalali";
 
+/** هر ردیف صورتحساب: تاریخ و شماره حواله خودش را دارد؛ نام محصول می‌تواند متن دلخواه باشد */
 export type ItemInput = {
-  productId: number | null;
-  productName: string;
-  cheleName: string;
-  weight: number;
-  fee: number;
-};
-
-export type InvoiceInput = {
   date: J;
   havaleNo: string;
-  customerId: number;
-  paymentType: string;
-  expenseTitle: string;
-  expenseAmount: number;
-  note: string;
-  items: ItemInput[];
+  productId: number | null;
+  productName: string;
+  weight: number | null;
+  fee: number | null;
+  /** فقط وقتی وزن یا فی خالی است استفاده می‌شود (مثلاً «مانده از قبل») */
+  amount: number;
 };
 
-export function calcTotals(items: { weight: number; fee: number }[], expense: number) {
-  const subtotal = items.reduce((s, i) => s + lineTotal(i.weight, i.fee), 0);
+export type HeaderInput = { date: J; expenseTitle: string; expenseAmount: number };
+
+/** مبلغ ردیف: وزن×فی اگر هر دو باشند، وگرنه مبلغ دستی */
+export function itemAmount(i: { weight: number | null; fee: number | null; amount: number }): number {
+  if (i.weight && i.fee) return lineTotal(i.weight, i.fee);
+  return Math.round(i.amount || 0);
+}
+
+export function calcTotals(items: { amount: number }[], expense: number) {
+  const subtotal = items.reduce((s, i) => s + i.amount, 0);
   return { subtotal, expense, balance: subtotal + expense };
 }
 
-export function validate(input: InvoiceInput): string | null {
-  if (!fromJ(input.date)) return "تاریخ نامعتبر است";
-  if (!input.customerId) return "مشتری را انتخاب کنید";
-  if (input.items.length === 0) return "حداقل یک ردیف کالا لازم است";
-  for (const [i, it] of input.items.entries()) {
-    if (!it.productName) return `ردیف ${i + 1}: محصول را انتخاب کنید`;
-    if (!(it.weight > 0)) return `ردیف ${i + 1}: وزن را وارد کنید`;
-    if (!(it.fee >= 0)) return `ردیف ${i + 1}: فی نامعتبر است`;
-  }
+export function validateHeader(h: HeaderInput): string | null {
+  if (!fromJ(h.date)) return "تاریخ نامعتبر است";
+  if (!Number.isFinite(h.expenseAmount)) return "مبلغ هزینه نامعتبر است";
   return null;
 }
 
-const itemData = (items: ItemInput[]) =>
-  items.map((i) => ({
-    productId: i.productId,
-    productName: i.productName,
-    cheleName: i.cheleName,
-    weight: i.weight,
-    fee: i.fee,
-  }));
+export function validateItem(i: ItemInput): string | null {
+  if (!fromJ(i.date)) return "تاریخ نامعتبر است";
+  if (!i.productName.trim()) return "محصول را انتخاب کنید یا بنویسید";
+  if (i.weight !== null && !(i.weight >= 0)) return "وزن نامعتبر است";
+  if (i.fee !== null && !(i.fee >= 0)) return "فی نامعتبر است";
+  if (!itemAmount(i) && !(i.weight && i.fee)) return "وزن و فی، یا مبلغ کل را وارد کنید";
+  return null;
+}
 
-export async function createInvoice(input: InvoiceInput): Promise<number> {
-  const date = fromJ(input.date)!;
+export async function createStatement(customerId: number, dateJ: J): Promise<number> {
+  const date = fromJ(dateJ)!;
   const year = jYearOf(date);
   return db.$transaction(async (tx) => {
-    // شماره فاکتور هر سال از ۱ شروع می‌شود و شماره حذف‌شده دوباره استفاده نمی‌شود
+    // شماره صورتحساب هر سال از ۱ شروع می‌شود و شماره حذف‌شده دوباره استفاده نمی‌شود
     const counter = await tx.invoiceCounter.upsert({
       where: { year },
       update: { last: { increment: 1 } },
       create: { year, last: 1 },
     });
-    const inv = await tx.invoice.create({
-      data: {
-        year,
-        number: counter.last,
-        date,
-        havaleNo: input.havaleNo,
-        customerId: input.customerId,
-        paymentType: input.paymentType,
-        expenseTitle: input.expenseTitle || "هزینه",
-        expenseAmount: input.expenseAmount,
-        note: input.note,
-        items: { create: itemData(input.items) },
-      },
-    });
+    const inv = await tx.invoice.create({ data: { year, number: counter.last, date, customerId } });
     return inv.id;
   });
 }
 
-export async function updateInvoice(id: number, input: InvoiceInput) {
-  const date = fromJ(input.date)!;
-  await db.$transaction([
-    db.invoiceItem.deleteMany({ where: { invoiceId: id } }),
-    db.invoice.update({
-      where: { id },
-      data: {
-        // سال/شماره فاکتور ثابت می‌ماند؛ فقط تاریخ نمایشی تغییر می‌کند
-        date,
-        havaleNo: input.havaleNo,
-        customerId: input.customerId,
-        paymentType: input.paymentType,
-        expenseTitle: input.expenseTitle || "هزینه",
-        expenseAmount: input.expenseAmount,
-        note: input.note,
-        items: { create: itemData(input.items) },
-      },
-    }),
-  ]);
+export async function updateHeader(id: number, h: HeaderInput) {
+  await db.invoice.update({
+    where: { id },
+    data: { date: fromJ(h.date)!, expenseTitle: h.expenseTitle.trim() || "هزینه", expenseAmount: h.expenseAmount },
+  });
+}
+
+const itemData = (i: ItemInput) => ({
+  date: fromJ(i.date)!,
+  havaleNo: i.havaleNo.trim(),
+  productId: i.productId,
+  productName: i.productName.trim(),
+  weight: i.weight || null,
+  fee: i.fee || null,
+  amount: itemAmount(i),
+});
+
+export async function addItem(invoiceId: number, i: ItemInput) {
+  await db.invoiceItem.create({ data: { invoiceId, ...itemData(i) } });
+}
+
+export async function updateItem(itemId: number, i: ItemInput) {
+  await db.invoiceItem.update({ where: { id: itemId }, data: itemData(i) });
 }
 
 export type FullInvoice = Prisma.InvoiceGetPayload<{ include: { items: true; customer: true } }>;
@@ -102,6 +88,7 @@ export type FullInvoice = Prisma.InvoiceGetPayload<{ include: { items: true; cus
 export async function getInvoice(id: number): Promise<FullInvoice | null> {
   return db.invoice.findUnique({
     where: { id },
-    include: { items: { orderBy: { id: "asc" } }, customer: true },
+    // ترتیب چاپ: به‌ترتیب تاریخ فروش، و در یک روز به‌ترتیب ثبت
+    include: { items: { orderBy: [{ date: "asc" }, { id: "asc" }] }, customer: true },
   });
 }
