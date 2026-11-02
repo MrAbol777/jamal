@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "حسابداری فروش نخ",
   description: "ثبت فروش و صدور فاکتور",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
