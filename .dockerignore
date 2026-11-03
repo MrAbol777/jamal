@@ -3,7 +3,14 @@ node_modules
 .git
 .env
 .env.*
+**/.env
+**/.env.*
 ADMIN-LOGIN.txt
 dev.log
+*.log
 prisma/dev.db*
 README.md
+.netlify
+tsconfig.tsbuildinfo
+# فایل‌های استقرار (شامل deploy/.env) داخل ایمیج لازم نیستند
+deploy

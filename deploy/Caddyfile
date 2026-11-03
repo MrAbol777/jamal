@@ -1,0 +1,32 @@
+# وب‌سرور جلوی برنامه.
+# SITE_ADDRESS از deploy/.env می‌آید:
+#   - اگر دامنه باشد (مثلاً example.ir): گواهی HTTPS خودکار از Let's Encrypt گرفته می‌شود.
+#   - اگر «:80» باشد: سایت روی http و با IP سرور باز می‌شود.
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	# اجازه‌ی آپلود فایل پشتیبان تا ۵۰ مگابایت
+	request_body {
+		max_size 50MB
+	}
+
+	# HSTS فقط وقتی سایت با HTTPS (دامنه) باز شده است
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=31536000"
+
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	reverse_proxy app:10000
+
+	log {
+		output stdout
+		format console
+	}
+}

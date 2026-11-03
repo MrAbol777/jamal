@@ -45,3 +45,8 @@ dev.log
 
 # Local Netlify folder
 .netlify
+
+# deploy
+deploy/.env
+!.env.example
+!deploy/.env.example

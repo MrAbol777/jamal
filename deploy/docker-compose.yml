@@ -1,0 +1,97 @@
+# اجرای برنامه روی سرور: دیتابیس + برنامه + Caddy (HTTPS خودکار)
+# همه‌ی مقادیر از deploy/.env خوانده می‌شوند (install.sh آن را می‌سازد).
+# مهم: هرگز «down -v» نزنید و پوشه‌ی /var/lib/jamal را پاک نکنید؛ داده‌ها آنجاست.
+#
+# IMAGE_PREFIX: اگر Docker Hub بسته باشد، نام ایمیج‌ها با این پیشوند ساخته می‌شود؛
+# مثلاً  docker.arvancloud.ir/  یا  docker.arvancloud.ir/library/
+# (ایمیج‌های رسمی در Docker Hub زیر library/ هستند؛ بعضی میرورها بدون آن هم کار می‌کنند.)
+
+services:
+  db:
+    image: ${IMAGE_PREFIX:-}postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jamal
+      POSTGRES_DB: jamal
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is missing in deploy/.env}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    # تنظیم برای سرور ۲ گیگابایتی که برنامه و Chromium هم روی آن هستند
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=40
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - log_min_duration_statement=2000
+    volumes:
+      - ${DATA_DIR:-/var/lib/jamal}/postgres:/var/lib/postgresql/data
+    # پورت دیتابیس عمداً به بیرون باز نشده است (فقط برنامه به آن وصل می‌شود)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jamal -d jamal"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    mem_limit: 512m
+    shm_size: 128m
+    stop_grace_period: 60s
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${IMAGE_PREFIX:-}node:22-slim
+        NPM_REGISTRY: ${NPM_REGISTRY:-}
+        PRISMA_ENGINES_MIRROR: ${PRISMA_ENGINES_MIRROR:-}
+        DEBIAN_MIRROR: ${DEBIAN_MIRROR:-}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgresql://jamal:${DB_PASSWORD}@db:5432/jamal?schema=public&connection_limit=5"
+      DIRECT_URL: "postgresql://jamal:${DB_PASSWORD}@db:5432/jamal?schema=public&connection_limit=5"
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is missing in deploy/.env}
+      COOKIE_SECURE: "${COOKIE_SECURE:-0}"
+      CHROME_PATH: /usr/bin/chromium
+      PORT: "10000"
+      TZ: ${APP_TZ:-Asia/Tehran}
+    # init: پردازه‌های تمام‌شده‌ی Chromium (ساخت PDF) را جمع می‌کند
+    init: true
+    # Chromium برای PDF حافظه و /dev/shm بزرگ‌تر لازم دارد
+    mem_limit: 1g
+    shm_size: 256m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:10000/api/health',{signal:AbortSignal.timeout(8000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+
+  caddy:
+    image: ${IMAGE_PREFIX:-}caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      # دامنه (مثلاً example.ir) یا «:80» برای اجرای ساده با IP
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:-/var/lib/jamal}/caddy/data:/data
+      - ${DATA_DIR:-/var/lib/jamal}/caddy/config:/config
+    mem_limit: 256m
