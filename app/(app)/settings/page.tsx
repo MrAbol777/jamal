@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { IconDownload } from "@/components/icons";
+import { RestoreCard } from "./restore-card";
 import { SettingsForms } from "./settings-forms";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,7 @@ export default async function SettingsPage() {
           دانلود نسخه پشتیبان
         </a>
       </section>
+      <RestoreCard />
       <SettingsForms s={{ companyName: s.companyName, subtitle: s.subtitle, address: s.address, phone: s.phone, mobile: s.mobile, managerName: s.managerName, footerNote: s.footerNote, logo: s.logo }} />
     </div>
   );
