@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { login, type ActionResult } from "../actions";
 import { IconLock, IconSpinner, IconUser, IconYarn } from "@/components/icons";
+import { BACKUP_MODAL_KEY } from "@/components/backup-modal";
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState<ActionResult, FormData>(login, {});
@@ -18,7 +19,17 @@ export default function LoginPage() {
           <p className="text-sm text-white/75">ثبت فروش و صدور فاکتور</p>
         </div>
 
-        <form action={action} className="card !p-5 space-y-4 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)]">
+        <form
+          action={action}
+          onSubmit={() => {
+            // بعد از هر ورود پیام یادآوری بکاپ دوباره نمایش داده شود
+            try {
+              localStorage.removeItem(BACKUP_MODAL_KEY);
+            } catch {
+              /* ignore */
+            }
+          }}
+          className="card !p-5 space-y-4 shadow-[0_20px_50px_-20px_rgba(15,23,42,0.35)]">
           <h2 className="font-bold text-lg">ورود به سیستم</h2>
           <div>
             <label className="label" htmlFor="username">نام کاربری</label>

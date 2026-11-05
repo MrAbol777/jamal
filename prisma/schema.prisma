@@ -27,6 +27,8 @@ model Setting {
   managerName String  @default("") // اسم زیر «امضا مدیریت»
   footerNote  String
   logo        String? // data URL
+  lastBackupAt    DateTime? // آخرین دانلود نسخه پشتیبان (برای یادآوری)
+  lastKeepaliveAt DateTime? // آخرین فراخوانی نگه‌دارنده/سلامت (برای هشدار توقف دیتابیس رایگان)
 }
 
 model Product {

@@ -45,3 +45,36 @@ export { format };
 export function dateToJ(date: Date): J {
   return toJ(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
+
+/** تاریخ و ساعت به وقت ایران (Asia/Tehran)، مستقل از منطقه‌ی زمانی سرور */
+export function tehranParts(date: Date): { j: J; hh: string; mm: string } {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Tehran",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(date)
+      .map((x) => [x.type, x.value]),
+  ) as Record<string, string>;
+  const j = toJ(new Date(Number(p.year), Number(p.month) - 1, Number(p.day)));
+  return { j, hh: p.hour, mm: p.minute };
+}
+
+/** «۱۴۰۵/۰۸/۱۵ ساعت ۱۴:۳۲» به وقت ایران */
+export function fmtJTime(date: Date): string {
+  const { j, hh, mm } = tehranParts(date);
+  const d = `${j.y}/${String(j.m).padStart(2, "0")}/${String(j.d).padStart(2, "0")}`;
+  return toFaDigits(`${d} ساعت ${hh}:${mm}`);
+}
+
+/** نام فایل پشتیبان: backup-1405-08-15_14-32.json (تاریخ شمسی و ساعت ایران، ارقام لاتین برای سازگاری با همه سیستم‌ها) */
+export function backupFileName(date: Date): string {
+  const { j, hh, mm } = tehranParts(date);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `backup-${j.y}-${pad(j.m)}-${pad(j.d)}_${hh}-${mm}.json`;
+}

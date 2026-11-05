@@ -50,3 +50,4 @@ dev.log
 deploy/.env
 !.env.example
 !deploy/.env.example
+ADMIN-LOGIN*.txt

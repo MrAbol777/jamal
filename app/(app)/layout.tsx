@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { getSystemStatus } from "@/lib/status";
+import { BackupModal } from "@/components/backup-modal";
+import { StatusBanner } from "@/components/status-banner";
 import { logout } from "../actions";
 import { NavLinks } from "./nav";
 import { LogoutButton } from "./logout-button";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   await requireUser();
+  const status = await getSystemStatus();
   return (
     <div className="min-h-dvh app-shell">
       <header className="sticky top-0 z-20 bg-brand text-white shadow-[0_1px_0_rgba(255,255,255,0.06),0_4px_16px_-8px_rgba(15,23,42,0.5)]">
@@ -22,7 +26,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </form>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 pt-4 md:pt-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 pt-4 md:pt-6">
+        <StatusBanner status={status} />
+        {children}
+      </main>
+      <BackupModal statusText={`${status.backup.text}.`} level={status.backup.level} />
       <nav
         aria-label="منوی اصلی"
         className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-white/95 backdrop-blur border-t border-line grid grid-cols-4 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-10px_rgba(15,23,42,0.25)]"
